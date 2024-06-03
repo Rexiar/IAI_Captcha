@@ -1,13 +1,34 @@
 const express = require('express');
-const captchaRoute = require('./routes/routes');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
-const port = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+const captchasDir = path.join(__dirname, 'captchas');
 
-app.use('/captcha', captchaRoute);
+// Helper function to get random captcha
+function getRandomCaptcha() {
+  const files = fs.readdirSync(captchasDir);
+  const randomIndex = Math.floor(Math.random() * files.length);
+  const fileName = files[randomIndex];
+  const filePath = path.join(captchasDir, fileName);
+  const fileContent = fs.readFileSync(filePath);
+  const base64String = fileContent.toString('base64');
+  const answer = path.parse(fileName).name; // Get file name without extension
 
-app.listen(port, () => {
-    console.log(`API running at http://localhost:${port}`);
+  return {
+    image: base64String,
+    answer: answer
+  };
+}
+
+// API endpoint to get captcha
+app.get('/captcha', (req, res) => {
+  const captcha = getRandomCaptcha();
+  res.json(captcha);
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
